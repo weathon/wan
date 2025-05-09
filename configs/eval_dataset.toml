@@ -32,7 +32,7 @@ ar_buckets = [[832, 480]]
 # For video training, you need to configure frame buckets (similar to aspect ratio buckets). There will always
 # be a frame bucket of 1 for images. Videos will be assigned to the first frame bucket that the video is greater than or equal to in length.
 # But videos are never assigned to the image frame bucket (1); if the video is very short it would just be dropped.
-frame_buckets = [33]
+frame_buckets = [25]
 # If you have >24GB VRAM, or multiple GPUs and use pipeline parallelism, or lower the spatial resolution, you could maybe train with longer frame buckets
 # frame_buckets = [1, 33, 65, 97]
 
@@ -41,13 +41,10 @@ frame_buckets = [33]
 # Path to directory of images/videos, and corresponding caption files. The caption files should match the media file name, but with a .txt extension.
 # A missing caption file will log a warning, but then just train using an empty caption.
 mode = "pair"
-path = '/path/to/your/data'
+path = '../eval_dataset'
 # The dataset will act like it is duplicated this many times.
 num_repeats = 1
 # Example of overriding some settings, and using ar_buckets to directly specify ARs.
-ar_buckets = [[832, 480]]
-resolutions = [[832, 480]]
-frame_buckets = [33]
 shuffle = false
 
 
