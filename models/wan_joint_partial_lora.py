@@ -27,7 +27,7 @@ def get_lora_output_mask(seq_len, start_idx, end_idx, scale_value=1.0, device='c
     and 0 elsewhere. Suitable for direct multiplication with LoRA output.
     """
     mask = torch.zeros(seq_len, dtype=torch.float32, device=device)
-    mask[start_idx:end_idx] = scale_value
+    mask[:] = scale_value
     return mask.view(1, -1, 1)  # Shape: [1, seq_len, 1]
 
 
