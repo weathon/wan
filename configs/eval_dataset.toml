@@ -41,7 +41,7 @@ frame_buckets = [25]
 # Path to directory of images/videos, and corresponding caption files. The caption files should match the media file name, but with a .txt extension.
 # A missing caption file will log a warning, but then just train using an empty caption.
 mode = "pair"
-path = '../eval_dataset'
+path = 'eval_dataset'
 # The dataset will act like it is duplicated this many times.
 num_repeats = 1
 # Example of overriding some settings, and using ar_buckets to directly specify ARs.

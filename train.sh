@@ -1,1 +1,1 @@
-deepspeed --num_gpus=8 train.py --deepspeed --config configs/train.toml
+deepspeed --num_gpus=1 train.py --deepspeed --config configs/train.toml
