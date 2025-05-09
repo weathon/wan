@@ -16,7 +16,8 @@ def add_modality_embedding(x, seq_lens, modality_embedding):
     # Now seq_lens is always [b]
     for i in range(x.shape[0]):
         half = seq_lens[i] // 2
-        x[i, half:seq_lens[i], :] += modality_embedding
+        x[i, half:seq_lens[i], :] += modality_embedding[0]
+        x[i, :half, :] += modality_embedding[1]
 
     return x
 
@@ -296,7 +297,7 @@ class WanJointPipeline(WanPipeline):
             p.original_name = name
         
         # Luozhou prepare the modality embedding
-        self.transformer.modality_embedding = torch.nn.Parameter(torch.zeros(1, self.transformer.config['dim'], device="cuda", dtype=dtype))
+        self.transformer.modality_embedding = torch.nn.Parameter(torch.zeros(2, self.transformer.config['dim'], device="cuda", dtype=dtype))
 
     def save_adapter(self, save_dir, peft_state_dict):
         self.peft_config.save_pretrained(save_dir)
@@ -640,7 +641,7 @@ class JointInitialLayer(nn.Module):
             self.img_emb = model.img_emb
         self.model = [model]
         self.model[0].modality_embedding.requires_grad_(True)
-        self.register_parameter('modality_embedding', self.model[0].modality_embedding) # Luozhou
+        self.register_parameter('modality_embedding', self.model.modality_embedding) # Luozhou
 
     # def __getattr__(self, name):
     #     return getattr(self.model[0], name)
