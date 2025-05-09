@@ -910,6 +910,7 @@ class Dataset:
         examples_for_this_dp_rank = examples[start_idx:start_idx+self.batch_size]
         if DEBUG:
             print((start_idx, start_idx+self.batch_size))
+        print("examples_for_this_dp_rank", examples_for_this_dp_rank)
         batch = self._collate(examples_for_this_dp_rank)
         return batch
 

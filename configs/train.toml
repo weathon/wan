@@ -82,7 +82,7 @@ timestep_sample_method = 'logit_normal'
 
 [adapter]
 type = 'lora'
-rank = 256
+rank = 64
 alpha = 1
 # Dtype for the LoRA weights you are training.
 dtype = 'bfloat16'

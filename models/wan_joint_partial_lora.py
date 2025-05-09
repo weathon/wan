@@ -298,6 +298,7 @@ class WanJointPipeline(WanPipeline):
         
         # Luozhou prepare the modality embedding
         self.transformer.modality_embedding = torch.nn.Parameter(torch.zeros(2, self.transformer.config['dim'], device="cuda", dtype=dtype))
+        self.transformer.style_embedding = torch.nn.Parameter(torch.zeros(2, self.transformer.config['dim'], device="cuda", dtype=dtype))
 
     def save_adapter(self, save_dir, peft_state_dict):
         self.peft_config.save_pretrained(save_dir)
@@ -400,7 +401,7 @@ class WanJointPipeline(WanPipeline):
         # Luozhou
 
         if n_prompt == "":
-            n_prompt = '色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走'
+            n_prompt = '突出、与背景形成色彩对比、高度可见、鲜艳的色调、静止、卡通外观、静态物体、过度曝光、高对比度、混乱的背景、模糊、失焦、娃娃外观、不自然、玩具、卡通、3D 渲染、3D 模型，容易察觉，容易看到; standing out, colour contrast against the background, highly visible, vibrant tones, motionless, cartoon look, static objects, overexposed, high contrast, messy background, blurry, out of focus, doll look, unnatural, toyish, cartoonish, 3d render, 3d model'
         seed = seed if seed >= 0 else random.randint(0, sys.maxsize)
         seed_g = torch.Generator(device=device)
         seed_g.manual_seed(seed)
