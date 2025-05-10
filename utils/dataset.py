@@ -1,3 +1,4 @@
+from pdb import set_trace as bp
 from pathlib import Path
 import os.path
 import random
@@ -910,7 +911,7 @@ class Dataset:
         examples_for_this_dp_rank = examples[start_idx:start_idx+self.batch_size]
         if DEBUG:
             print((start_idx, start_idx+self.batch_size))
-        print("examples_for_this_dp_rank", examples_for_this_dp_rank)
+        # print("examples_for_this_dp_rank", examples_for_this_dp_rank[0].keys())
         batch = self._collate(examples_for_this_dp_rank)
         return batch
 
@@ -921,7 +922,7 @@ class Dataset:
         for key, value in examples[0].items():
             if torch.is_tensor(value):
                 ret[key] = torch.stack([example[key] for example in examples])
-            else:
+            else: 
                 ret[key] = [example[key] for example in examples]
         return ret
 
@@ -1186,10 +1187,15 @@ class PipelineDataLoader:
 
     def _pull_batches_from_dataloader(self):
         for batch in self.dataloader:
+            style = [int(i[0]) for i in batch["caption"]]
+            print(style)
             batch = self.model.prepare_inputs(batch, timestep_quantile=self.eval_quantile)
             self.num_batches_pulled += 1
+            index = 0
             for micro_batch in split_batch(batch, self.gradient_accumulation_steps):
-                yield micro_batch
+                yield micro_batch#, style[index:index+len(micro_batch)]
+                #  we can again use the state to store? use the embeding
+                index += len(micro_batch)
 
     # Only the first and last stages in the pipeline pull from the dataloader. Parts of the code need
     # to know the epoch, so we synchronize the epoch so the processes that don't use the dataloader

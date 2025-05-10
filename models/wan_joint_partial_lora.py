@@ -1,3 +1,5 @@
+from pdb import set_trace as bp
+
 from models.wan import *
 import peft
 from typing import Any, Optional, Union
@@ -298,14 +300,17 @@ class WanJointPipeline(WanPipeline):
         
         # Luozhou prepare the modality embedding
         self.transformer.modality_embedding = torch.nn.Parameter(torch.zeros(2, self.transformer.config['dim'], device="cuda", dtype=dtype))
-        self.transformer.style_embedding = torch.nn.Parameter(torch.zeros(2, self.transformer.config['dim'], device="cuda", dtype=dtype))
-
+        self.transformer.style_embedding = nn.Linear(4096, self.transformer.config['dim'], bias=False)
+        nn.init.zeros_(self.transformer.style_embedding.weight)
+        self.transformer.modality_embedding.requires_grad_(True)
+        
     def save_adapter(self, save_dir, peft_state_dict):
         self.peft_config.save_pretrained(save_dir)
         # ComfyUI format.
         peft_state_dict = {'diffusion_model.'+k: v for k, v in peft_state_dict.items()}
         # add modality_embedding
         peft_state_dict['transformer.modality_embedding'] = self.transformer.modality_embedding.detach().cpu()
+        peft_state_dict['transformer.style_embedding'] = self.transformer.style_embedding.weight.detach().cpu()
 
         safetensors.torch.save_file(peft_state_dict, save_dir / 'adapter_model.safetensors', metadata={'format': 'pt'})
 
@@ -337,7 +342,7 @@ class WanJointPipeline(WanPipeline):
 
         if timestep_quantile is not None:
             t = dist.icdf(torch.full((bs,), timestep_quantile, device=latents.device))
-        else:
+        else: 
             t = dist.sample((bs,)).to(latents.device)
 
         if timestep_sample_method == 'logit_normal':
@@ -365,7 +370,7 @@ class WanJointPipeline(WanPipeline):
             seq_lens,
             clip_context,
             target
-        )
+        ) 
 
     def to_layers(self):
         transformer = self.transformer
@@ -401,7 +406,7 @@ class WanJointPipeline(WanPipeline):
         # Luozhou
 
         if n_prompt == "":
-            n_prompt = '突出、与背景形成色彩对比、高度可见、鲜艳的色调、静止、卡通外观、静态物体、过度曝光、高对比度、混乱的背景、模糊、失焦、娃娃外观、不自然、玩具、卡通、3D 渲染、3D 模型，容易察觉，容易看到; standing out, colour contrast against the background, highly visible, vibrant tones, motionless, cartoon look, static objects, overexposed, high contrast, messy background, blurry, out of focus, doll look, unnatural, toyish, cartoonish, 3d render, 3d model'
+            n_prompt = '0 突出、与背景形成色彩对比、高度可见、鲜艳的色调、静止、卡通外观、静态物体、过度曝光、高对比度、混乱的背景、模糊、失焦、娃娃外观、不自然、玩具、卡通、3D 渲染、3D 模型，容易察觉，容易看到; standing out, colour contrast against the background, highly visible, vibrant tones, motionless, cartoon look, static objects, overexposed, high contrast, messy background, blurry, out of focus, doll look, unnatural, toyish, cartoonish, 3d render, 3d model'
         seed = seed if seed >= 0 else random.randint(0, sys.maxsize)
         seed_g = torch.Generator(device=device)
         seed_g.manual_seed(seed)
@@ -480,10 +485,9 @@ class WanJointPipeline(WanPipeline):
 
                 timestep = torch.stack(timestep)
                 
-                noise_pred_cond = self.transformer(
-                    latent_model_input, t=timestep, **arg_c)[0]
-                noise_pred_uncond = self.transformer(
-                    latent_model_input, t=timestep, **arg_null)[0]
+                noise_pred_cond = self.transformer(latent_model_input, t=timestep, **arg_c)[0]
+                
+                noise_pred_uncond = self.transformer(latent_model_input, t=timestep, **arg_null)[0]
 
                 noise_pred = noise_pred_uncond + guide_scale * (
                     noise_pred_cond - noise_pred_uncond)
@@ -626,7 +630,7 @@ class WanJointPipeline(WanPipeline):
     
 class JointInitialLayer(nn.Module):
     def __init__(self, model):
-        super().__init__()
+        super().__init__() 
         self.patch_embedding = model.patch_embedding
         self.time_embedding = model.time_embedding
         self.text_embedding = model.text_embedding
@@ -642,23 +646,26 @@ class JointInitialLayer(nn.Module):
             self.img_emb = model.img_emb
         self.model = [model]
         self.model[0].modality_embedding.requires_grad_(True)
-        self.register_parameter('modality_embedding', self.model.modality_embedding) # Luozhou
+        self.model[0].style_embedding.weight.requires_grad_(True)
+        self.register_parameter('modality_embedding', self.model[0].modality_embedding) # Luozhou
+        self.register_parameter('style_embedding', self.model[0].style_embedding.weight) 
 
     # def __getattr__(self, name):
     #     return getattr(self.model[0], name)
 
     @torch.autocast('cuda', dtype=AUTOCAST_DTYPE)
-    def forward(self, inputs):
+    def forward(self, inputs): 
         for item in inputs:
             if torch.is_floating_point(item):
                 item.requires_grad_(True)
 
         x, y, t, context, text_seq_lens, clip_fea, target = inputs
         bs, channels, f, h, w = x.shape
-        if clip_fea.numel() == 0:
+        if clip_fea.numel() == 0: 
             clip_fea = None
         context = [emb[:length] for emb, length in zip(context, text_seq_lens)]
 
+        style_tokens = [self.model[0].style_embedding(emb[0]) for emb in context]
         device = self.patch_embedding.weight.device
         if self.freqs.device != device:
             self.freqs = self.freqs.to(device)
@@ -705,6 +712,9 @@ class JointInitialLayer(nn.Module):
         grid_sizes = grid_sizes.to(x.device)
 
         x = add_modality_embedding(x, seq_lens, self.modality_embedding)
+        x = x + torch.stack(style_tokens).unsqueeze(1).repeat(1, x.shape[1], 1)
+        
+        
         return make_contiguous(x, e, e0, seq_lens, grid_sizes, self.freqs, context, target)
 
 
@@ -727,4 +737,4 @@ class FinalLayer(nn.Module):
             output = output.to(torch.float32)
             target = target.to(torch.float32)
             loss = F.mse_loss(output, target)
-        return loss
+        return loss 

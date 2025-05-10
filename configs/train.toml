@@ -13,7 +13,7 @@ eval_datasets = [
 # I usually set this to a really high value because I don't know how long I want to train.
 epochs = 100
 # Batch size of a single forward/backward pass for one GPU.
-micro_batch_size_per_gpu = 2
+micro_batch_size_per_gpu = 4
 # Pipeline parallelism degree. A single instance of the model is divided across this many GPUs.
 pipeline_stages = 1
 # Number of micro-batches sent through the pipeline for each training step.
@@ -37,7 +37,7 @@ eval_before_first_step = true
 eval_micro_batch_size_per_gpu = 1
 eval_gradient_accumulation_steps = 1
 
-# misc settings
+# misc settings 
 
 # Probably want to set this a bit higher if you have a smaller dataset so you don't end up with a million saved models.
 save_every_n_epochs = 100
@@ -62,7 +62,7 @@ steps_per_print = 1
 # single_middle: one clip from the middle of the video (cutting off the start and end equally)
 # multiple_overlapping: extract the minimum number of clips to cover the full range of the video. They might overlap some.
 # default is single_middle
-video_clip_mode = 'single_beginning'
+video_clip_mode = 'single_beginning' 
 
 [model]
 type = 'wan-joint-partial-lora'
@@ -90,8 +90,8 @@ dtype = 'bfloat16'
 # init_from_existing = '/data/user/user69/projects/video-generation_runs/rgba/20250225_10-09-31/epoch1'
 target_modules = [
     'self_attn',
-    'cross_attn.q',
-    'cross_attn.o',
+    'cross_attn',
+    'cross_attn',
     'ffn',
 ]
 
