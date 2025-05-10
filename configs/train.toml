@@ -30,7 +30,7 @@ ema_decay = 0.9
 
 eval_every_n_epochs = 100
 eval_every_n_steps = 1000
-eval_before_first_step = false
+eval_before_first_step = true
 # Might want to set these lower for eval so that less images get dropped (eval dataset size is usually much smaller than training set).
 # Each size bucket of images/videos is rounded down to the nearest multiple of the global batch size, so higher global batch size means
 # more dropped images. Usually doesn't matter for training but the eval set is much smaller so it can matter.
